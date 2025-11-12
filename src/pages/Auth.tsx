@@ -27,18 +27,16 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/");
-      }
-    };
-    checkSession();
-
-    // Listen for auth changes
+    // Listen for auth changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && event === "SIGNED_IN") {
+        navigate("/");
+      }
+    });
+
+    // THEN check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
         navigate("/");
       }
     });
@@ -129,6 +127,8 @@ const Auth = () => {
           description: "Invalid email or password. Please try again.",
           variant: "destructive",
         });
+      } else {
+        navigate("/");
       }
     } catch (error) {
       if (error instanceof z.ZodError) {

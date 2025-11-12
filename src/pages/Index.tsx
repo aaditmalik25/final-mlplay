@@ -1,14 +1,29 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import { Brain, Code2, TrendingUp, Users, Award, BookOpen } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const [startPath, setStartPath] = useState("/auth");
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setStartPath(session ? "/problems" : "/auth");
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setStartPath(session ? "/problems" : "/auth");
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[image:var(--gradient-hero)] opacity-50" />
@@ -25,7 +40,7 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="text-lg">
-                <Link to="/problems">Start Learning</Link>
+                <Link to={startPath}>Start Learning</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="text-lg">
                 <Link to="/auth">Sign Up Free</Link>
