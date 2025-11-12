@@ -30,14 +30,14 @@ const Auth = () => {
     // Listen for auth changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && event === "SIGNED_IN") {
-        navigate("/");
+        navigate("/problems");
       }
     });
 
     // THEN check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        navigate("/problems");
       }
     });
 
@@ -128,7 +128,7 @@ const Auth = () => {
           variant: "destructive",
         });
       } else {
-        navigate("/");
+        navigate("/problems");
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
