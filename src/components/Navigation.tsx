@@ -1,13 +1,34 @@
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Code2, Trophy, User, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
 
 const Navigation = () => {
   const location = useLocation();
-  
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const isActive = (path: string) => location.pathname === path;
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
   
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
@@ -67,12 +88,25 @@ const Navigation = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-2">
-            <Button asChild variant="ghost">
-              <Link to="/auth">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/auth">Get Started</Link>
-            </Button>
+            {isLoggedIn ? (
+              <>
+                <Button asChild variant="ghost">
+                  <Link to="/problems">Go to Problems</Link>
+                </Button>
+                <Button variant="secondary" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="ghost">
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/auth">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -86,12 +120,23 @@ const Navigation = () => {
               <div className="flex flex-col gap-4 mt-8">
                 <NavLinks mobile />
                 <div className="flex flex-col gap-2 mt-4">
-                  <Button asChild variant="outline">
-                    <Link to="/auth">Sign In</Link>
-                  </Button>
-                  <Button asChild>
-                    <Link to="/auth">Get Started</Link>
-                  </Button>
+                  {isLoggedIn ? (
+                    <>
+                      <Button asChild variant="outline">
+                        <Link to="/problems">Go to Problems</Link>
+                      </Button>
+                      <Button onClick={handleSignOut}>Sign Out</Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button asChild variant="outline">
+                        <Link to="/auth">Sign In</Link>
+                      </Button>
+                      <Button asChild>
+                        <Link to="/auth">Get Started</Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>
