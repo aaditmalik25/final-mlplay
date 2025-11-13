@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,46 +7,149 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Send } from "lucide-react";
+import { Play, Send, ArrowLeft, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Problem {
+  id: string;
+  title: string;
+  slug: string;
+  difficulty: "easy" | "medium" | "hard";
+  description: string;
+  constraints: string;
+  input_format: string;
+  expected_output: string;
+  starter_code: string;
+}
+
+interface TestResult {
+  testCaseId: string;
+  passed: boolean;
+  isSample: boolean;
+  input?: any;
+  expectedOutput?: any;
+  actualOutput?: any;
+  error?: string;
+}
 
 const ProblemDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { toast } = useToast();
-  const [code, setCode] = useState(`import numpy as np
-from sklearn.linear_model import LinearRegression
+  const [problem, setProblem] = useState<Problem | null>(null);
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
 
-def solve(X_train, y_train, X_test):
-    """
-    Implement a linear regression model
-    
-    Args:
-        X_train: Training features (numpy array)
-        y_train: Training labels (numpy array)
-        X_test: Test features (numpy array)
-    
-    Returns:
-        predictions: Predicted values for X_test
-    """
-    # Your code here
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    
-    return predictions
-`);
+  useEffect(() => {
+    fetchProblem();
+  }, [slug]);
 
-  const handleRun = () => {
-    toast({
-      title: "Running tests...",
-      description: "Executing your code against sample test cases",
-    });
+  const fetchProblem = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('problems')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (error) throw error;
+      setProblem(data as Problem);
+      setCode(data.starter_code || "");
+    } catch (error) {
+      console.error('Error fetching problem:', error);
+      toast({
+        title: "Error loading problem",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = () => {
-    toast({
-      title: "Submission received!",
-      description: "Your solution is being evaluated...",
-    });
+  const handleRun = async () => {
+    if (!problem) return;
+    
+    setRunning(true);
+    setTestResults([]);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to run code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('execute-code', {
+        body: { code, problemId: problem.id },
+      });
+
+      if (error) throw error;
+
+      setTestResults(data.results || []);
+      
+      if (data.status === 'accepted') {
+        toast({
+          title: "All tests passed! 🎉",
+          description: `Execution time: ${data.executionTime}ms`,
+        });
+      } else {
+        toast({
+          title: "Some tests failed",
+          description: "Check the results below",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error running code:', error);
+      toast({
+        title: "Execution failed",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    await handleRun();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!problem) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">Problem not found</p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const getDifficultyBg = (difficulty: string) => {
+    switch (difficulty) {
+      case "easy": return "bg-easy/10 text-easy border-easy/20";
+      case "medium": return "bg-medium/10 text-medium border-medium/20";
+      case "hard": return "bg-hard/10 text-hard border-hard/20";
+      default: return "";
+    }
   };
 
   return (
@@ -54,94 +157,115 @@ def solve(X_train, y_train, X_test):
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-2 gap-6 h-[calc(100vh-120px)]">
+        <Button asChild variant="ghost" className="mb-4">
+          <Link to="/topics">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Topics
+          </Link>
+        </Button>
+
+        <div className="grid lg:grid-cols-2 gap-6 h-[calc(100vh-180px)]">
           {/* Left Panel - Problem Description */}
           <Card className="p-6 overflow-y-auto">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-3">Linear Regression Basics</h1>
+              <h1 className="text-2xl font-bold mb-3">{problem.title}</h1>
               <div className="flex gap-2 mb-4">
-                <Badge variant="outline" className="bg-easy/10 text-easy border-easy/20">
-                  Easy
+                <Badge variant="outline" className={getDifficultyBg(problem.difficulty)}>
+                  {problem.difficulty}
                 </Badge>
-                <Badge variant="outline">Regression</Badge>
               </div>
             </div>
 
             <Tabs defaultValue="description" className="w-full">
               <TabsList className="w-full">
                 <TabsTrigger value="description" className="flex-1">Description</TabsTrigger>
-                <TabsTrigger value="examples" className="flex-1">Examples</TabsTrigger>
-                <TabsTrigger value="solution" className="flex-1">Solution</TabsTrigger>
+                <TabsTrigger value="results" className="flex-1">Test Results</TabsTrigger>
               </TabsList>
               
               <TabsContent value="description" className="space-y-4 mt-4">
                 <div>
                   <h3 className="font-semibold mb-2">Problem Statement</h3>
-                  <p className="text-muted-foreground">
-                    Implement a simple linear regression model to predict continuous values. 
-                    Given training data with features X_train and labels y_train, train your model 
-                    and make predictions on the test set X_test.
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {problem.description}
                   </p>
                 </div>
 
-                <div>
-                  <h3 className="font-semibold mb-2">Constraints</h3>
-                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li>You may use scikit-learn or implement from scratch</li>
-                    <li>Training data: 1 ≤ n_samples ≤ 10,000</li>
-                    <li>Features: 1 ≤ n_features ≤ 50</li>
-                  </ul>
-                </div>
+                {problem.constraints && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Constraints</h3>
+                    <p className="text-muted-foreground whitespace-pre-wrap">
+                      {problem.constraints}
+                    </p>
+                  </div>
+                )}
 
-                <div>
-                  <h3 className="font-semibold mb-2">Input Format</h3>
-                  <p className="text-muted-foreground">
-                    X_train: numpy array of shape (n_samples, n_features)<br />
-                    y_train: numpy array of shape (n_samples,)<br />
-                    X_test: numpy array of shape (n_test_samples, n_features)
-                  </p>
-                </div>
+                {problem.input_format && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Input Format</h3>
+                    <p className="text-muted-foreground whitespace-pre-wrap">
+                      {problem.input_format}
+                    </p>
+                  </div>
+                )}
 
-                <div>
-                  <h3 className="font-semibold mb-2">Expected Output</h3>
-                  <p className="text-muted-foreground">
-                    Return a numpy array of predictions with shape (n_test_samples,)
-                  </p>
-                </div>
+                {problem.expected_output && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Expected Output</h3>
+                    <p className="text-muted-foreground whitespace-pre-wrap">
+                      {problem.expected_output}
+                    </p>
+                  </div>
+                )}
               </TabsContent>
               
-              <TabsContent value="examples" className="space-y-4 mt-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Example 1</h3>
-                  <Card className="p-4 bg-muted">
-                    <pre className="text-sm">
-{`X_train = [[1], [2], [3], [4]]
-y_train = [2, 4, 6, 8]
-X_test = [[5]]
-
-Output: [10]`}
-                    </pre>
-                  </Card>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-2">Example 2</h3>
-                  <Card className="p-4 bg-muted">
-                    <pre className="text-sm">
-{`X_train = [[1, 2], [2, 3], [3, 4]]
-y_train = [5, 8, 11]
-X_test = [[4, 5]]
-
-Output: [14] (approximately)`}
-                    </pre>
-                  </Card>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="solution" className="mt-4">
-                <p className="text-muted-foreground">
-                  Solve the problem to unlock the solution and explanation.
-                </p>
+              <TabsContent value="results" className="space-y-4 mt-4">
+                {testResults.length === 0 ? (
+                  <p className="text-muted-foreground">
+                    Run your code to see test results here.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {testResults.map((result, index) => (
+                      <Card key={result.testCaseId} className={`p-4 ${result.passed ? 'border-success' : 'border-destructive'}`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold">
+                            {result.isSample ? 'Sample ' : 'Hidden '}Test Case {index + 1}
+                          </h4>
+                          <Badge variant={result.passed ? "default" : "destructive"}>
+                            {result.passed ? "PASSED" : "FAILED"}
+                          </Badge>
+                        </div>
+                        {result.isSample && (
+                          <div className="text-sm space-y-1">
+                            <div>
+                              <span className="text-muted-foreground">Input:</span>
+                              <pre className="bg-muted p-2 rounded mt-1 text-xs overflow-x-auto">
+                                {JSON.stringify(result.input, null, 2)}
+                              </pre>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Expected:</span>
+                              <pre className="bg-muted p-2 rounded mt-1 text-xs overflow-x-auto">
+                                {JSON.stringify(result.expectedOutput, null, 2)}
+                              </pre>
+                            </div>
+                            {!result.passed && (
+                              <div>
+                                <span className="text-muted-foreground">Your Output:</span>
+                                <pre className="bg-muted p-2 rounded mt-1 text-xs overflow-x-auto">
+                                  {JSON.stringify(result.actualOutput, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {result.error && (
+                          <p className="text-sm text-destructive mt-2">{result.error}</p>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </Card>
@@ -161,13 +285,31 @@ Output: [14] (approximately)`}
             />
 
             <div className="flex gap-2">
-              <Button onClick={handleRun} variant="outline" className="flex-1">
-                <Play className="h-4 w-4 mr-2" />
-                Run Tests
+              <Button 
+                onClick={handleRun} 
+                variant="outline" 
+                className="flex-1"
+                disabled={running}
+              >
+                {running ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Running...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Run Tests
+                  </>
+                )}
               </Button>
-              <Button onClick={handleSubmit} className="flex-1">
+              <Button 
+                onClick={handleSubmit} 
+                className="flex-1"
+                disabled={running}
+              >
                 <Send className="h-4 w-4 mr-2" />
-                Submit Solution
+                Submit
               </Button>
             </div>
           </Card>

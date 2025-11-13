@@ -33,6 +33,18 @@ const Navigation = () => {
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
       <Link 
+        to="/topics" 
+        className={cn(
+          "flex items-center gap-2 px-4 py-2 rounded-md transition-colors",
+          isActive("/topics") 
+            ? "bg-primary text-primary-foreground" 
+            : "text-foreground hover:bg-secondary"
+        )}
+      >
+        <Code2 className="h-4 w-4" />
+        Topics
+      </Link>
+      <Link 
         to="/problems" 
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-md transition-colors",

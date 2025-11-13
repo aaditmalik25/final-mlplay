@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      problems: {
+        Row: {
+          acceptance_rate: number | null
+          constraints: string | null
+          created_at: string | null
+          description: string
+          difficulty: string
+          expected_output: string | null
+          id: string
+          input_format: string | null
+          order_index: number
+          slug: string
+          solution_code: string | null
+          solution_explanation: string | null
+          starter_code: string
+          title: string
+          topic_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          acceptance_rate?: number | null
+          constraints?: string | null
+          created_at?: string | null
+          description: string
+          difficulty: string
+          expected_output?: string | null
+          id?: string
+          input_format?: string | null
+          order_index: number
+          slug: string
+          solution_code?: string | null
+          solution_explanation?: string | null
+          starter_code: string
+          title: string
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          acceptance_rate?: number | null
+          constraints?: string | null
+          created_at?: string | null
+          description?: string
+          difficulty?: string
+          expected_output?: string | null
+          id?: string
+          input_format?: string | null
+          order_index?: number
+          slug?: string
+          solution_code?: string | null
+          solution_explanation?: string | null
+          starter_code?: string
+          title?: string
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problems_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -41,6 +106,124 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          code: string
+          created_at: string | null
+          execution_time: number | null
+          id: string
+          memory_used: number | null
+          problem_id: string | null
+          status: string
+          test_results: Json | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          execution_time?: number | null
+          id?: string
+          memory_used?: number | null
+          problem_id?: string | null
+          status: string
+          test_results?: Json | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          execution_time?: number | null
+          id?: string
+          memory_used?: number | null
+          problem_id?: string | null
+          status?: string
+          test_results?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_cases: {
+        Row: {
+          created_at: string | null
+          expected_output: Json
+          id: string
+          input_data: Json
+          is_hidden: boolean | null
+          is_sample: boolean | null
+          order_index: number
+          problem_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expected_output: Json
+          id?: string
+          input_data: Json
+          is_hidden?: boolean | null
+          is_sample?: boolean | null
+          order_index: number
+          problem_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expected_output?: Json
+          id?: string
+          input_data?: Json
+          is_hidden?: boolean | null
+          is_sample?: boolean | null
+          order_index?: number
+          problem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_cases_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          order_index: number
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          order_index: number
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
