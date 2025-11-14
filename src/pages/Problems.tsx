@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
-import { Card } from "@/components/ui/card";
+import { DepthCard } from "@/components/ui/depth-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Code2, Brain, TrendingUp, ArrowRight, Filter, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 type Difficulty = "easy" | "medium" | "hard";
 
@@ -83,19 +84,19 @@ const Problems = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       <Navigation />
       
-      {/* Animated 3D background elements */}
+      {/* Subtle gradient background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-white/3 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230BC5EA' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
       }} />
       
       {/* Hero Section */}
@@ -127,30 +128,22 @@ const Problems = () => {
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              <Card className="p-4 bg-black/60 backdrop-blur-xl border-white/10 hover:scale-105 transition-transform duration-300 hover:border-white/20" style={{
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-              }}>
-                <div className="text-2xl font-bold text-white">{stats.total}</div>
-                <div className="text-sm text-white/60">Total Problems</div>
-              </Card>
-              <Card className="p-4 bg-black/60 backdrop-blur-xl border-white/10 hover:scale-105 transition-transform duration-300 hover:border-white/20" style={{
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-              }}>
-                <div className="text-2xl font-bold text-white">{stats.easy}</div>
-                <div className="text-sm text-white/60">Easy</div>
-              </Card>
-              <Card className="p-4 bg-black/60 backdrop-blur-xl border-white/10 hover:scale-105 transition-transform duration-300 hover:border-white/20" style={{
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-              }}>
-                <div className="text-2xl font-bold text-white">{stats.medium}</div>
-                <div className="text-sm text-white/60">Medium</div>
-              </Card>
-              <Card className="p-4 bg-black/60 backdrop-blur-xl border-white/10 hover:scale-105 transition-transform duration-300 hover:border-white/20" style={{
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-              }}>
-                <div className="text-2xl font-bold text-white">{stats.hard}</div>
-                <div className="text-sm text-white/60">Hard</div>
-              </Card>
+              <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <div className="text-sm text-muted-foreground">Total Problems</div>
+              </DepthCard>
+              <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
+                <div className="text-2xl font-bold">{stats.easy}</div>
+                <div className="text-sm text-muted-foreground">Easy</div>
+              </DepthCard>
+              <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
+                <div className="text-2xl font-bold">{stats.medium}</div>
+                <div className="text-sm text-muted-foreground">Medium</div>
+              </DepthCard>
+              <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
+                <div className="text-2xl font-bold">{stats.hard}</div>
+                <div className="text-sm text-muted-foreground">Hard</div>
+              </DepthCard>
             </div>
           </div>
         </div>
@@ -235,69 +228,54 @@ const Problems = () => {
             ))}
           </div>
         ) : filteredProblems.length === 0 ? (
-          <Card className="p-12 text-center border-dashed border-2 border-white/20 bg-black/40 backdrop-blur-xl">
-            <Brain className="h-12 w-12 mx-auto mb-4 text-white/30" />
-            <p className="text-lg font-medium text-white/70 mb-2">
+          <DepthCard className="p-12 text-center border-dashed border-2" glassEffect>
+            <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-lg font-medium text-muted-foreground mb-2">
               {filter === "all" 
                 ? "No problems available yet." 
                 : `No ${filter} problems available.`}
             </p>
-            <p className="text-sm text-white/50">
+            <p className="text-sm text-muted-foreground">
               Check back soon for new challenges!
             </p>
-          </Card>
+          </DepthCard>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProblems.map((problem, index) => (
-              <Card 
-                key={problem.id} 
-                className="group relative overflow-hidden border-white/10 bg-black/60 backdrop-blur-xl hover:border-white/30 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 hover:rotate-1"
-                style={{
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-                  transform: `perspective(1000px) rotateY(0deg)`,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'perspective(1000px) rotateY(2deg) rotateX(-2deg) translateY(-8px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(0px)';
-                }}
+              <motion.div
+                key={problem.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.4 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <Link to={`/problem/${problem.slug}`} className="block p-6 relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-2 rounded-lg bg-white/10 border border-white/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 group-hover:bg-white/20">
-                      <Code2 className="h-5 w-5 text-white" />
+                <DepthCard className="group relative overflow-hidden" depth="md" hoverLift glassEffect>
+                  <Link to={`/problem/${problem.slug}`} className="block p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 group-hover:scale-110 transition-all">
+                        <Code2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <Badge className={getDifficultyBg(problem.difficulty)}>
+                        {problem.difficulty}
+                      </Badge>
                     </div>
-                    <Badge 
-                      variant="outline" 
-                      className="bg-white/10 border-white/20 text-white font-medium backdrop-blur-sm"
-                    >
-                      {problem.difficulty}
-                    </Badge>
-                  </div>
-                  
-                  <h3 className="font-semibold text-lg mb-3 text-white group-hover:text-white transition-colors line-clamp-2">
-                    {problem.title}
-                  </h3>
-                  
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
-                    <div className="flex items-center gap-2 text-sm text-white/60">
-                      <TrendingUp className="h-4 w-4" />
-                      <span>{problem.acceptance_rate || 0}% acceptance</span>
+                    
+                    <h3 className="font-semibold text-lg mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                      {problem.title}
+                    </h3>
+                    
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>{problem.acceptance_rate || 0}%</span>
+                      </div>
+                      <Button size="sm" variant="ghost" className="group-hover:scale-110 transition-transform">
+                        Solve
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Button>
                     </div>
-                    <Button 
-                      size="sm" 
-                      className="bg-white/10 text-white border border-white/20 hover:bg-white hover:text-black transition-all duration-300 group-hover:scale-110"
-                      variant="ghost"
-                    >
-                      Solve
-                      <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </div>
-                </Link>
-              </Card>
+                  </Link>
+                </DepthCard>
+              </motion.div>
             ))}
           </div>
         )}
