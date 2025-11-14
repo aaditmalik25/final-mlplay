@@ -6,7 +6,7 @@ import { Trophy, Target, TrendingUp, Award } from "lucide-react";
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       <Navigation />
       
       {/* Animated 3D background elements */}

@@ -94,7 +94,7 @@ const TopicProblems = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       <Navigation />
       
       {/* Animated 3D background elements */}
@@ -111,7 +111,7 @@ const TopicProblems = () => {
       
       <div className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-6xl mx-auto">
-          <Button asChild variant="ghost" className="mb-6 text-white hover:bg-white/10">
+          <Button asChild variant="ghost" className="mb-6">
             <Link to="/topics">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Topics

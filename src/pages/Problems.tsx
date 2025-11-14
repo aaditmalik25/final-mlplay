@@ -87,16 +87,16 @@ const Problems = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <Navigation />
       
-      {/* Subtle gradient background */}
+      {/* Animated 3D background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] bg-white/3 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230BC5EA' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
       }} />
       
       {/* Hero Section */}
@@ -129,20 +129,20 @@ const Problems = () => {
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
               <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <div className="text-sm text-muted-foreground">Total Problems</div>
+                <div className="text-2xl font-bold text-white">{stats.total}</div>
+                <div className="text-sm text-white/70">Total Problems</div>
               </DepthCard>
               <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
-                <div className="text-2xl font-bold">{stats.easy}</div>
-                <div className="text-sm text-muted-foreground">Easy</div>
+                <div className="text-2xl font-bold text-white">{stats.easy}</div>
+                <div className="text-sm text-white/70">Easy</div>
               </DepthCard>
               <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
-                <div className="text-2xl font-bold">{stats.medium}</div>
-                <div className="text-sm text-muted-foreground">Medium</div>
+                <div className="text-2xl font-bold text-white">{stats.medium}</div>
+                <div className="text-sm text-white/70">Medium</div>
               </DepthCard>
               <DepthCard className="p-4" depth="sm" hoverLift glassEffect>
-                <div className="text-2xl font-bold">{stats.hard}</div>
-                <div className="text-sm text-muted-foreground">Hard</div>
+                <div className="text-2xl font-bold text-white">{stats.hard}</div>
+                <div className="text-sm text-white/70">Hard</div>
               </DepthCard>
             </div>
           </div>
@@ -221,21 +221,21 @@ const Problems = () => {
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="p-6 animate-pulse border-white/10 bg-black/60 backdrop-blur-xl">
+              <DepthCard key={i} className="p-6 animate-pulse border-white/10 bg-black/60 backdrop-blur-xl">
                 <div className="h-6 bg-white/10 rounded w-3/4 mb-4"></div>
                 <div className="h-4 bg-white/10 rounded w-1/2"></div>
-              </Card>
+              </DepthCard>
             ))}
           </div>
         ) : filteredProblems.length === 0 ? (
           <DepthCard className="p-12 text-center border-dashed border-2" glassEffect>
-            <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-lg font-medium text-muted-foreground mb-2">
+            <Brain className="h-12 w-12 mx-auto mb-4 text-white/70" />
+            <p className="text-lg font-medium text-white/70 mb-2">
               {filter === "all" 
                 ? "No problems available yet." 
                 : `No ${filter} problems available.`}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/70">
               Check back soon for new challenges!
             </p>
           </DepthCard>
@@ -251,24 +251,24 @@ const Problems = () => {
                 <DepthCard className="group relative overflow-hidden" depth="md" hoverLift glassEffect>
                   <Link to={`/problem/${problem.slug}`} className="block p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 group-hover:scale-110 transition-all">
-                        <Code2 className="h-5 w-5 text-primary" />
+                      <div className="p-2 rounded-lg bg-white/10 border border-white/20 group-hover:scale-110 transition-all">
+                        <Code2 className="h-5 w-5 text-white" />
                       </div>
                       <Badge className={getDifficultyBg(problem.difficulty)}>
                         {problem.difficulty}
                       </Badge>
                     </div>
                     
-                    <h3 className="font-semibold text-lg mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                    <h3 className="font-semibold text-lg mb-3 text-white group-hover:text-white/80 transition-colors line-clamp-2">
                       {problem.title}
                     </h3>
                     
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+                      <div className="flex items-center gap-2 text-sm text-white/70">
                         <TrendingUp className="h-4 w-4" />
                         <span>{problem.acceptance_rate || 0}%</span>
                       </div>
-                      <Button size="sm" variant="ghost" className="group-hover:scale-110 transition-transform">
+                      <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 group-hover:scale-110 transition-transform">
                         Solve
                         <ArrowRight className="h-4 w-4 ml-1" />
                       </Button>

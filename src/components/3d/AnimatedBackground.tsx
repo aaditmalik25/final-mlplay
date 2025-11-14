@@ -1,16 +1,39 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Sphere, MeshDistortMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
 function FloatingOrb({ position, color, speed }: { position: [number, number, number]; color: string; speed: number }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({
+        x: (e.clientX / window.innerWidth) * 2 - 1,
+        y: -(e.clientY / window.innerHeight) * 2 + 1,
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
   
   useFrame((state) => {
     if (!meshRef.current) return;
     meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * speed) * 0.5;
     meshRef.current.rotation.x = state.clock.elapsedTime * speed * 0.2;
     meshRef.current.rotation.y = state.clock.elapsedTime * speed * 0.3;
+
+    // Calculate distance to mouse cursor
+    const distance = Math.sqrt(
+      Math.pow(meshRef.current.position.x - mousePos.x * 5, 2) +
+      Math.pow(meshRef.current.position.y - mousePos.y * 5, 2)
+    );
+
+    // Increase intensity when cursor is near (within 3 units)
+    const proximityIntensity = Math.max(1.5, 3 - distance) * 0.5;
+    (meshRef.current.material as THREE.Material).emissiveIntensity = proximityIntensity;
   });
 
   return (
@@ -24,6 +47,8 @@ function FloatingOrb({ position, color, speed }: { position: [number, number, nu
         metalness={0.8}
         transparent
         opacity={0.6}
+        emissive={color}
+        emissiveIntensity={0.5}
       />
     </Sphere>
   );
@@ -53,7 +78,7 @@ export function AnimatedBackground() {
 
   if (prefersReducedMotion) {
     return (
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden z-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
       </div>
@@ -61,7 +86,7 @@ export function AnimatedBackground() {
   }
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden z-0">
       <Canvas
         camera={{ position: [0, 0, 5], fov: 75 }}
         style={{ background: 'transparent' }}

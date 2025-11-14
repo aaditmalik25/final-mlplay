@@ -124,7 +124,7 @@ const ProblemDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>
     );
@@ -132,7 +132,7 @@ const ProblemDetail = () => {
 
   if (!problem) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-background">
         <Navigation />
         <div className="container mx-auto px-4 py-8">
           <Card className="p-8 text-center bg-black/60 backdrop-blur-xl border-white/10">
@@ -153,7 +153,7 @@ const ProblemDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       <Navigation />
       
       {/* Animated 3D background elements */}
@@ -169,7 +169,7 @@ const ProblemDetail = () => {
       }} />
       
       <div className="container mx-auto px-4 py-6 relative z-10">
-        <Button asChild variant="ghost" className="mb-4 text-white hover:bg-white/10">
+        <Button asChild variant="ghost" className="mb-4">
           <Link to="/topics">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Topics

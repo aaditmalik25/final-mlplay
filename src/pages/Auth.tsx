@@ -151,8 +151,8 @@ const Auth = () => {
       <AnimatedBackground />
 
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-5" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230BC5EA' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      <div className="absolute inset-0 opacity-5 z-0" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
       }} />
 
       <motion.div 
@@ -164,17 +164,17 @@ const Auth = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
             <motion.div 
-              className="p-2 rounded-lg bg-primary/10 backdrop-blur-sm border border-primary/30 group-hover:border-primary/50"
+              className="p-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/30 group-hover:border-white/50"
               whileHover={{ scale: 1.1, rotate: 3 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <Code2 className="h-8 w-8 text-primary" />
+              <Code2 className="h-8 w-8 text-white" />
             </motion.div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+            <span className="text-2xl font-bold text-white">
               ML Playground
             </span>
           </Link>
-          <p className="text-muted-foreground">
+          <p className="text-white/70">
             Join thousands learning machine learning
           </p>
         </div>
@@ -190,13 +190,13 @@ const Auth = () => {
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/30 border border-border/50">
               <TabsTrigger 
                 value="signin" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
+                className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300"
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger 
                 value="signup"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
+                className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300"
               >
                 Sign Up
               </TabsTrigger>
@@ -212,7 +212,7 @@ const Auth = () => {
                     type="email" 
                     placeholder="your@email.com" 
                     required 
-                    className="bg-background/50 border-border/50 focus:border-primary transition-all duration-300"
+                    className="bg-background/50 border-border/50 focus:border-white transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
@@ -223,13 +223,13 @@ const Auth = () => {
                     type="password" 
                     placeholder="••••••••" 
                     required 
-                    className="bg-background/50 border-border/50 focus:border-primary transition-all duration-300"
+                    className="bg-background/50 border-border/50 focus:border-white transition-all duration-300"
                   />
                 </div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300" 
+                    className="w-full bg-white text-black hover:bg-white/90 font-semibold shadow-lg shadow-white/30 hover:shadow-white/50 transition-all duration-300" 
                     disabled={isLoading}
                   >
                     {isLoading ? "Signing in..." : "Sign In"}
@@ -248,7 +248,7 @@ const Auth = () => {
                     type="text" 
                     placeholder="John Doe" 
                     required 
-                    className="bg-background/50 border-border/50 focus:border-primary transition-all duration-300"
+                    className="bg-background/50 border-border/50 focus:border-white transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
@@ -259,7 +259,7 @@ const Auth = () => {
                     type="email" 
                     placeholder="your@email.com" 
                     required 
-                    className="bg-background/50 border-border/50 focus:border-primary transition-all duration-300"
+                    className="bg-background/50 border-border/50 focus:border-white transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
@@ -271,13 +271,13 @@ const Auth = () => {
                     placeholder="••••••••" 
                     required 
                     minLength={6}
-                    className="bg-background/50 border-border/50 focus:border-primary transition-all duration-300"
+                    className="bg-background/50 border-border/50 focus:border-white transition-all duration-300"
                   />
                 </div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300" 
+                    className="w-full bg-white text-black hover:bg-white/90 font-semibold shadow-lg shadow-white/30 hover:shadow-white/50 transition-all duration-300" 
                     disabled={isLoading}
                   >
                     {isLoading ? "Creating account..." : "Create Account"}
@@ -287,13 +287,13 @@ const Auth = () => {
             </TabsContent>
           </Tabs>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+          <div className="mt-6 text-center text-sm text-white/70">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </div>
         </DepthCard>
 
         <div className="text-center mt-4">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 group">
+          <Link to="/" className="text-sm text-white/70 hover:text-white transition-colors inline-flex items-center gap-1 group">
             <motion.span 
               className="inline-block"
               animate={{ x: [-2, 0] }}
