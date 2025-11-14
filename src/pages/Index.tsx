@@ -9,27 +9,44 @@ import { useRef, useMemo } from "react";
 
 
 function PlusGrid({ spacing = 40, radius = 100, color = "#94a3b8" }) {
-  const refs = useRef([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const refs = useRef<HTMLDivElement[]>([]);
   const mouse = useRef({ x: -9999, y: -9999 });
   const [size, setSize] = useState({
-    w: window.innerWidth,
-    h: window.innerHeight,
+    w: typeof window !== "undefined" ? window.innerWidth : 0,
+    h: typeof document !== "undefined" ? document.documentElement.scrollHeight : 0,
   });
 
+  // update size on resize and scroll (scroll affects document height if content changes)
   useEffect(() => {
-    const onResize = () =>
-      setSize({ w: window.innerWidth, h: window.innerHeight });
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const updateSize = () => {
+      const w = window.innerWidth;
+      // full document height (covers entire page)
+      const h = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+      setSize({ w, h });
+    };
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    window.addEventListener("scroll", updateSize); // update if content/layout changes on scroll
+    // optional: mutation observer could be added if DOM changes dynamically, but scroll+resize covers most cases
+
+    return () => {
+      window.removeEventListener("resize", updateSize);
+      window.removeEventListener("scroll", updateSize);
+    };
   }, []);
 
   const points = useMemo(() => {
-    const pts = [];
+    const pts: { x: number; y: number }[] = [];
     const cols = Math.ceil(size.w / spacing) + 1;
     const rows = Math.ceil(size.h / spacing) + 1;
+    // optional center offset so grid lines align with your tiled SVG if you use one:
+    const xOffset = spacing / 2;
+    const yOffset = spacing / 2;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        pts.push({ x: c * spacing, y: r * spacing });
+        pts.push({ x: c * spacing + xOffset, y: r * spacing + yOffset });
       }
     }
     return pts;
@@ -42,21 +59,21 @@ function PlusGrid({ spacing = 40, radius = 100, color = "#94a3b8" }) {
     const animate = () => {
       running = true;
       const mx = mouse.current.x;
-      const my = mouse.current.y;
+      const my = mouse.current.y + window.scrollY; // convert clientY to document coordinates
+      const r = radius;
       for (let i = 0; i < refs.current.length; i++) {
         const el = refs.current[i];
         if (!el) continue;
-
-        const px = Number(el.dataset.x);
-        const py = Number(el.dataset.y);
+        const px = el.dataset.x ? Number(el.dataset.x) : 0;
+        const py = el.dataset.y ? Number(el.dataset.y) : 0;
         const dx = px - mx;
         const dy = py - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const proximity = Math.max(0, (radius - dist) / radius);
+        const proximity = Math.max(0, (r - dist) / r); // 0..1
 
         const scale = 1 + proximity * 0.6;
         const brightness = 0.6 + proximity * 1.4;
-        const opacity = 0.3 + proximity * 0.4;
+        const opacity = 0.35 + proximity * 0.5; // baseline 0.2 -> up to 0.7
 
         el.style.transform = `translate(${px}px, ${py}px) translate(-50%,-50%) scale(${scale})`;
         el.style.filter = `brightness(${brightness})`;
@@ -65,25 +82,51 @@ function PlusGrid({ spacing = 40, radius = 100, color = "#94a3b8" }) {
       raf = requestAnimationFrame(animate);
     };
 
-    const onMove = (e) => {
+    const onMove = (e: MouseEvent) => {
+      // convert from viewport (client) coords to document coords by adding scrollY
       mouse.current.x = e.clientX;
       mouse.current.y = e.clientY;
       if (!running) raf = requestAnimationFrame(animate);
     };
 
+    const onLeave = () => {
+      // reset mouse far away so things return to baseline
+      mouse.current.x = -9999;
+      mouse.current.y = -9999;
+      if (!running) raf = requestAnimationFrame(animate);
+    };
+
     window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseleave", onLeave);
+    window.addEventListener("mouseout", onLeave);
+
     return () => {
       window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("mouseout", onLeave);
       cancelAnimationFrame(raf);
+      running = false;
     };
   }, [radius]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    // container covers entire document height so pluses are placed across the full page
+    <div
+      ref={containerRef}
+      className="pointer-events-none"
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        width: "100%",
+        height: size.h, // crucial: set container height to document height
+        overflow: "hidden",
+      }}
+    >
       {points.map((p, i) => (
         <div
           key={i}
-          ref={(el) => (refs.current[i] = el)}
+          ref={(el) => (refs.current[i] = el as HTMLDivElement)}
           data-x={p.x}
           data-y={p.y}
           style={{
@@ -94,45 +137,21 @@ function PlusGrid({ spacing = 40, radius = 100, color = "#94a3b8" }) {
             height: 18,
             transform: `translate(${p.x}px, ${p.y}px) translate(-50%, -50%)`,
             opacity: 0.2,
-            transition:
-              "transform 120ms linear, filter 120ms linear, opacity 120ms linear",
+            transition: "transform 120ms linear, filter 120ms linear, opacity 120ms linear",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <line
-              x1="6"
-              y1="1"
-              x2="6"
-              y2="11"
-              stroke={color}
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <line
-              x1="1"
-              y1="6"
-              x2="11"
-              y2="6"
-              stroke={color}
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="6" y1="1" x2="6" y2="11" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="1" y1="6" x2="11" y2="6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
       ))}
     </div>
   );
 }
-
 
 const Index = () => {
   const [startPath, setStartPath] = useState("/auth");
