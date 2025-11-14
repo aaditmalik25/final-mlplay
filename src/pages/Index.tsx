@@ -5,6 +5,134 @@ import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import { Brain, Code2, TrendingUp, Users, Award, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRef, useMemo } from "react";
+
+
+function PlusGrid({ spacing = 40, radius = 100, color = "#94a3b8" }) {
+  const refs = useRef([]);
+  const mouse = useRef({ x: -9999, y: -9999 });
+  const [size, setSize] = useState({
+    w: window.innerWidth,
+    h: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const onResize = () =>
+      setSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const points = useMemo(() => {
+    const pts = [];
+    const cols = Math.ceil(size.w / spacing) + 1;
+    const rows = Math.ceil(size.h / spacing) + 1;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        pts.push({ x: c * spacing, y: r * spacing });
+      }
+    }
+    return pts;
+  }, [size.w, size.h, spacing]);
+
+  useEffect(() => {
+    let raf = 0;
+    let running = false;
+
+    const animate = () => {
+      running = true;
+      const mx = mouse.current.x;
+      const my = mouse.current.y;
+      for (let i = 0; i < refs.current.length; i++) {
+        const el = refs.current[i];
+        if (!el) continue;
+
+        const px = Number(el.dataset.x);
+        const py = Number(el.dataset.y);
+        const dx = px - mx;
+        const dy = py - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const proximity = Math.max(0, (radius - dist) / radius);
+
+        const scale = 1 + proximity * 0.6;
+        const brightness = 0.6 + proximity * 1.4;
+        const opacity = 0.3 + proximity * 0.4;
+
+        el.style.transform = `translate(${px}px, ${py}px) translate(-50%,-50%) scale(${scale})`;
+        el.style.filter = `brightness(${brightness})`;
+        el.style.opacity = opacity.toString();
+      }
+      raf = requestAnimationFrame(animate);
+    };
+
+    const onMove = (e) => {
+      mouse.current.x = e.clientX;
+      mouse.current.y = e.clientY;
+      if (!running) raf = requestAnimationFrame(animate);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, [radius]);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {points.map((p, i) => (
+        <div
+          key={i}
+          ref={(el) => (refs.current[i] = el)}
+          data-x={p.x}
+          data-y={p.y}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: 18,
+            height: 18,
+            transform: `translate(${p.x}px, ${p.y}px) translate(-50%, -50%)`,
+            opacity: 0.3,
+            transition:
+              "transform 120ms linear, filter 120ms linear, opacity 120ms linear",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <line
+              x1="6"
+              y1="1"
+              x2="6"
+              y2="11"
+              stroke={color}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <line
+              x1="1"
+              y1="6"
+              x2="11"
+              y2="6"
+              stroke={color}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 
 const Index = () => {
   const [startPath, setStartPath] = useState("/auth");
@@ -34,9 +162,8 @@ const Index = () => {
       </div>
 
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-      }} />
+      <PlusGrid spacing={40} radius={140} color="#94a3b8" />
+
 
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-white/10">
