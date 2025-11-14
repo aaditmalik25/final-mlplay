@@ -93,7 +93,7 @@ function PlusGrid({ spacing = 40, radius = 100, color = "#94a3b8" }) {
             width: 18,
             height: 18,
             transform: `translate(${p.x}px, ${p.y}px) translate(-50%, -50%)`,
-            opacity: 0.3,
+            opacity: 0.2,
             transition:
               "transform 120ms linear, filter 120ms linear, opacity 120ms linear",
             display: "flex",
