@@ -53,61 +53,54 @@ function PlusGrid({ spacing = 40, radius = 100, color = "#94a3b8" }) {
   }, [size.w, size.h, spacing]);
 
   useEffect(() => {
-    let raf = 0;
-    let running = false;
+  let raf = 0;
+  let running = false;
 
-    const animate = () => {
-      running = true;
-      const mx = mouse.current.x;
-      const my = mouse.current.y + window.scrollY; // convert clientY to document coordinates
-      const r = radius;
-      for (let i = 0; i < refs.current.length; i++) {
-        const el = refs.current[i];
-        if (!el) continue;
-        const px = el.dataset.x ? Number(el.dataset.x) : 0;
-        const py = el.dataset.y ? Number(el.dataset.y) : 0;
-        const dx = px - mx;
-        const dy = py - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const proximity = Math.max(0, (r - dist) / r); // 0..1
+  const animate = () => {
+    running = true;
+    const mx = mouse.current.x;
+    const my = mouse.current.y + window.scrollY;
 
-        const scale = 1 + proximity * 0.6;
-        const brightness = 0.6 + proximity * 1.4;
-        const opacity = 0.35 + proximity * 0.5; // baseline 0.2 -> up to 0.7
+    for (let i = 0; i < refs.current.length; i++) {
+      const el = refs.current[i];
+      if (!el) continue;
 
-        el.style.transform = `translate(${px}px, ${py}px) translate(-50%,-50%) scale(${scale})`;
-        el.style.filter = `brightness(${brightness})`;
-        el.style.opacity = opacity.toString();
-      }
-      raf = requestAnimationFrame(animate);
-    };
+      const px = Number(el.dataset.x);
+      const py = Number(el.dataset.y);
+      const dx = px - mx;
+      const dy = py - my;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const proximity = Math.max(0, (radius - dist) / radius);
 
-    const onMove = (e: MouseEvent) => {
-      // convert from viewport (client) coords to document coords by adding scrollY
-      mouse.current.x = e.clientX;
-      mouse.current.y = e.clientY;
-      if (!running) raf = requestAnimationFrame(animate);
-    };
+      const scale = 1 + proximity * 0.6;
+      const brightness = 0.6 + proximity * 1.4;
+      const opacity = 0.3 + proximity * 0.4;
 
-    const onLeave = () => {
-      // reset mouse far away so things return to baseline
-      mouse.current.x = -9999;
-      mouse.current.y = -9999;
-      if (!running) raf = requestAnimationFrame(animate);
-    };
+      el.style.transform = `translate(${px}px, ${py}px) translate(-50%,-50%) scale(${scale})`;
+      el.style.filter = `brightness(${brightness})`;
+      el.style.opacity = opacity.toString();
+    }
 
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseleave", onLeave);
-    window.addEventListener("mouseout", onLeave);
+    raf = requestAnimationFrame(animate);
+  };
 
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseleave", onLeave);
-      window.removeEventListener("mouseout", onLeave);
-      cancelAnimationFrame(raf);
-      running = false;
-    };
-  }, [radius]);
+  // ⭐ START THE LOOP IMMEDIATELY — FIXES FIRST-TIME LAG
+  raf = requestAnimationFrame(animate);
+  running = true;
+
+  const onMove = (e) => {
+    mouse.current.x = e.clientX;
+    mouse.current.y = e.clientY;
+  };
+
+  window.addEventListener("mousemove", onMove);
+
+  return () => {
+    window.removeEventListener("mousemove", onMove);
+    cancelAnimationFrame(raf);
+  };
+}, [radius]);
+
 
   return (
     // container covers entire document height so pluses are placed across the full page
