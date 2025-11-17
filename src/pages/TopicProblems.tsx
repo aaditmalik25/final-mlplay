@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
@@ -23,32 +23,78 @@ interface Topic {
   description: string;
 }
 
+const CACHE_PREFIX = "topic_page_v1:";
+
+/** Run fn when the browser is idle (fallback to setTimeout) */
+function scheduleIdle(fn: () => void, timeout = 2000) {
+  if ("requestIdleCallback" in window) {
+    (window as any).requestIdleCallback(fn, { timeout });
+  } else {
+    setTimeout(fn, 300);
+  }
+}
+
+/** Fetch wrapper with timeout and metrics */
+async function fetchWithTimeoutAndMetrics<T>(
+  fn: (signal?: AbortSignal) => Promise<T | null>,
+  signal?: AbortSignal,
+  timeoutMs = 10000
+): Promise<{ data: T | null; timingMs: number; approxBytes: number }> {
+  const ctrl = new AbortController();
+  const outer = signal;
+  if (outer) outer.addEventListener("abort", () => ctrl.abort(), { once: true });
+
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const t0 = performance.now();
+  try {
+    const data = await fn(ctrl.signal);
+    const t1 = performance.now();
+    clearTimeout(timer);
+
+    const approxBytes = data ? JSON.stringify(data).length : 0;
+    return { data, timingMs: Math.round(t1 - t0), approxBytes };
+  } catch (err) {
+    const t1 = performance.now();
+    clearTimeout(timer);
+    return { data: null, timingMs: Math.round(t1 - t0), approxBytes: 0 };
+  }
+}
+
 const TopicProblems = () => {
-  const { slug } = useParams();
+  const { slug } = useParams<{ slug: string }>();
   const [topic, setTopic] = useState<Topic | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchTopicAndProblems();
-  }, [slug]);
-
-  const fetchTopicAndProblems = async () => {
-    try {
+  // The server call that returns the combined payload (topic + problems).
+  // We keep the API exactly the same as you had previously.
+  const fetchFromServer = useCallback(
+    async (signal?: AbortSignal) => {
       // Fetch topic
       const { data: topicData, error: topicError } = await supabase
-        .from('topics')
-        .select('name, description')
-        .eq('slug', slug)
+        .from("topics")
+        .select("name, description")
+        .eq("slug", slug)
         .single();
 
       if (topicError) throw topicError;
-      setTopic(topicData);
 
-      // Fetch problems for this topic
+      // Fetch problems for this topic by topic id
+      const topicIdResp = await supabase
+        .from("topics")
+        .select("id")
+        .eq("slug", slug)
+        .single();
+
+      const topicId = topicIdResp?.data?.id;
+      if (!topicId) {
+        // no problems if topic not found
+        return { topic: topicData as Topic, problems: [] as Problem[] };
+      }
+
       const { data: problemsData, error: problemsError } = await supabase
-        .from('problems')
+        .from("problems")
         .select(`
           id,
           title,
@@ -56,24 +102,119 @@ const TopicProblems = () => {
           difficulty,
           description,
           acceptance_rate,
-          topic_id
+          topic_id,
+          order_index
         `)
-        .eq('topic_id', (await supabase.from('topics').select('id').eq('slug', slug).single()).data?.id)
-        .order('order_index');
+        .eq("topic_id", topicId)
+        .order("order_index");
 
       if (problemsError) throw problemsError;
-      setProblems((problemsData || []) as Problem[]);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Error loading problems",
-        description: "Please try again later",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      return { topic: topicData as Topic, problems: (problemsData || []) as Problem[] };
+    },
+    [slug]
+  );
+
+  useEffect(() => {
+    if (!slug) return;
+    let canceled = false;
+    const controller = new AbortController();
+    const cacheKey = `${CACHE_PREFIX}${slug}`;
+
+    const load = async () => {
+      setLoading(true);
+
+      // Try cache first (read once)
+      const cachedString = localStorage.getItem(cacheKey);
+      if (cachedString) {
+        try {
+          const parsed = JSON.parse(cachedString) as {
+            topic: Topic;
+            problems: Problem[];
+          };
+
+          setTopic(parsed.topic);
+          setProblems(parsed.problems || []);
+          setLoading(false);
+
+          // Schedule background refresh during idle time
+          scheduleIdle(async () => {
+            // background fetch with timeout and metrics
+            const { data: fresh, timingMs, approxBytes } = await fetchWithTimeoutAndMetrics(
+              fetchFromServer,
+              controller.signal,
+              8000
+            );
+
+            console.debug(`BG fetch timing: ${timingMs}ms, payload ~${approxBytes} bytes`);
+
+            if (!fresh || controller.signal.aborted || canceled) return;
+
+            const freshString = JSON.stringify(fresh);
+            if (freshString !== cachedString) {
+              try {
+                localStorage.setItem(cacheKey, freshString);
+              } catch (e) {
+                console.warn("Could not write cache", e);
+              }
+              setTopic(fresh.topic);
+              setProblems(fresh.problems || []);
+              console.debug("Applied background update for topic page");
+            } else {
+              console.debug("BG refresh: no changes");
+            }
+          });
+
+          return;
+        } catch (err) {
+          console.warn("Failed to parse cache, refetching", err);
+          localStorage.removeItem(cacheKey);
+          // fallthrough to fetch
+        }
+      }
+
+      // No cache path (blocking fetch, but with timeout wrapper)
+      try {
+        const { data: fresh, timingMs, approxBytes } = await fetchWithTimeoutAndMetrics(
+          fetchFromServer,
+          controller.signal,
+          10000
+        );
+
+        console.debug(`Main fetch timing: ${timingMs}ms, payload ~${approxBytes} bytes`);
+
+        if (!fresh || controller.signal.aborted || canceled) {
+          setLoading(false);
+          return;
+        }
+
+        setTopic(fresh.topic);
+        setProblems(fresh.problems || []);
+
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(fresh));
+        } catch (e) {
+          console.warn("Could not write cache", e);
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        toast({
+          title: "Error loading problems",
+          description: "Please try again later",
+          variant: "destructive",
+        });
+      } finally {
+        if (!canceled) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      canceled = true;
+      controller.abort();
+    };
+  }, [slug, fetchFromServer, toast]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -96,8 +237,8 @@ const TopicProblems = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <Navigation />
-      
-      {/* Animated 3D background elements */}
+
+      {/* Decorative background (kept as-is) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
@@ -108,7 +249,7 @@ const TopicProblems = () => {
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
       }} />
-      
+
       <div className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-6xl mx-auto">
           <Button asChild variant="ghost" className="mb-6">
@@ -140,8 +281,8 @@ const TopicProblems = () => {
           ) : (
             <div className="space-y-3">
               {problems.map((problem) => (
-                <Card 
-                  key={problem.id} 
+                <Card
+                  key={problem.id}
                   className="p-4 bg-black/60 backdrop-blur-xl border-white/10 hover:border-white/30 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2"
                   style={{
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
@@ -156,11 +297,11 @@ const TopicProblems = () => {
                   <Link to={`/problem/${problem.slug}`}>
                     <div className="flex items-center gap-4">
                       <Circle className="h-5 w-5 text-white/60 flex-shrink-0" />
-                      
+
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-lg mb-1 text-white">{problem.title}</h3>
                         <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="outline" className="bg-white/10 border-white/20 text-white">
+                          <Badge variant="outline" className={cn("bg-white/10 border-white/20 text-white", getDifficultyBg(problem.difficulty))}>
                             {problem.difficulty}
                           </Badge>
                           <span className="text-sm text-white/60">
