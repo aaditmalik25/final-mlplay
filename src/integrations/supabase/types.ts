@@ -232,7 +232,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_leaderboard: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          rank: number
+          solved_count: number
+          total_score: number
+          user_id: string
+          username: string
+        }[]
+      }
+      get_user_dashboard_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          acceptance_rate: number
+          recent_submissions: Json
+          solved_problems: number
+          total_problems: number
+          total_submissions: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

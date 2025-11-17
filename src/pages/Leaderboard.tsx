@@ -1,23 +1,49 @@
+import { useEffect, useState } from "react";
 import Navigation from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award } from "lucide-react";
+import { Trophy, Medal } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-const leaderboardData = [
-  { rank: 1, name: "Alex Chen", solved: 45, score: 4850, badge: "platinum" },
-  { rank: 2, name: "Sarah Kim", solved: 42, score: 4620, badge: "gold" },
-  { rank: 3, name: "Michael Zhang", solved: 40, score: 4500, badge: "gold" },
-  { rank: 4, name: "Emily Watson", solved: 38, score: 4280, badge: "silver" },
-  { rank: 5, name: "David Lee", solved: 35, score: 4100, badge: "silver" },
-  { rank: 6, name: "Jessica Moore", solved: 33, score: 3950, badge: "bronze" },
-  { rank: 7, name: "Ryan Park", solved: 32, score: 3820, badge: "bronze" },
-  { rank: 8, name: "Sophie Taylor", solved: 30, score: 3650, badge: "bronze" },
-  { rank: 9, name: "James Wilson", solved: 28, score: 3480, badge: "bronze" },
-  { rank: 10, name: "Lisa Anderson", solved: 27, score: 3350, badge: "bronze" },
-];
+interface LeaderboardUser {
+  user_id: string;
+  full_name: string;
+  username: string;
+  avatar_url: string;
+  solved_count: number;
+  total_score: number;
+  rank: number;
+}
 
 const Leaderboard = () => {
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
+
+  const fetchLeaderboard = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_leaderboard');
+
+      if (error) throw error;
+
+      setLeaderboardData((data || []) as LeaderboardUser[]);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      toast({
+        title: "Error loading leaderboard",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
@@ -31,19 +57,18 @@ const Leaderboard = () => {
     }
   };
 
-  const getBadgeColor = (badge: string) => {
-    switch (badge) {
-      case "platinum":
-        return "bg-white/10 text-white border-white/20";
-      case "gold":
-        return "bg-white/10 text-white border-white/20";
-      case "silver":
-        return "bg-white/10 text-white/80 border-white/20";
-      case "bronze":
-        return "bg-white/10 text-white/60 border-white/20";
-      default:
-        return "";
-    }
+  const getBadgeColor = (score: number) => {
+    if (score >= 4000) return "bg-white/10 text-white border-white/20";
+    if (score >= 3500) return "bg-white/10 text-white border-white/20";
+    if (score >= 3000) return "bg-white/10 text-white/80 border-white/20";
+    return "bg-white/10 text-white/60 border-white/20";
+  };
+
+  const getBadgeName = (score: number) => {
+    if (score >= 4000) return "platinum";
+    if (score >= 3500) return "gold";
+    if (score >= 3000) return "silver";
+    return "bronze";
   };
 
   return (
@@ -71,11 +96,25 @@ const Leaderboard = () => {
             </p>
           </div>
 
-          {/* Top 3 Podium */}
-          <div className="grid md:grid-cols-3 gap-4 mb-8">
-            {leaderboardData.slice(0, 3).map((user, idx) => (
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-6 animate-pulse bg-black/60 backdrop-blur-xl border-white/10">
+                  <div className="h-6 bg-white/10 rounded w-3/4"></div>
+                </Card>
+              ))}
+            </div>
+          ) : leaderboardData.length === 0 ? (
+            <Card className="p-8 text-center bg-black/60 backdrop-blur-xl border-white/10">
+              <p className="text-white/70">No users on the leaderboard yet. Start solving problems!</p>
+            </Card>
+          ) : (
+            <>
+              {/* Top 3 Podium */}
+              <div className="grid md:grid-cols-3 gap-4 mb-8">
+                {leaderboardData.slice(0, 3).map((user, idx) => (
               <Card 
-                key={user.rank} 
+                key={user.user_id}
                 className={`p-6 text-center bg-black/60 backdrop-blur-xl border-white/10 hover:border-white/30 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${
                   idx === 0 ? 'md:order-2' : idx === 1 ? 'md:order-1' : 'md:order-3'
                 }`}
@@ -92,74 +131,76 @@ const Leaderboard = () => {
                 <div className="flex justify-center mb-4">
                   {getRankIcon(user.rank)}
                 </div>
-                <Avatar className="h-20 w-20 mx-auto mb-3 border-2 border-white/20">
-                  <AvatarFallback className="text-2xl bg-white/10 text-white">
-                    {user.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <h3 className="font-bold text-xl mb-1 text-white">{user.name}</h3>
-                <Badge variant="outline" className={getBadgeColor(user.badge)}>
-                  {user.badge}
-                </Badge>
-                <div className="mt-4 space-y-1">
-                  <div className="text-2xl font-bold text-white">{user.score}</div>
-                  <div className="text-sm text-white/60">
-                    {user.solved} problems solved
+                  <Avatar className="h-20 w-20 mx-auto mb-3 border-2 border-white/20">
+                    <AvatarFallback className="text-2xl bg-white/10 text-white">
+                      {user.full_name ? user.full_name.split(' ').map(n => n[0]).join('') : user.username?.[0] || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="font-bold text-xl mb-1 text-white">{user.full_name || user.username || 'Anonymous'}</h3>
+                  <Badge variant="outline" className={getBadgeColor(user.total_score)}>
+                    {getBadgeName(user.total_score)}
+                  </Badge>
+                  <div className="mt-4 space-y-1">
+                    <div className="text-2xl font-bold text-white">{user.total_score}</div>
+                    <div className="text-sm text-white/60">
+                      {user.solved_count} problems solved
+                    </div>
                   </div>
+              </Card>
+                ))}
+              </div>
+
+              {/* Full Leaderboard */}
+              <Card className="bg-black/60 backdrop-blur-xl border-white/10" style={{
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+              }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left p-4 font-semibold text-white">Rank</th>
+                        <th className="text-left p-4 font-semibold text-white">User</th>
+                        <th className="text-left p-4 font-semibold text-white">Badge</th>
+                        <th className="text-right p-4 font-semibold text-white">Solved</th>
+                        <th className="text-right p-4 font-semibold text-white">Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboardData.map((user) => (
+                        <tr 
+                          key={user.user_id} 
+                          className="border-b border-white/10 last:border-0 hover:bg-white/5 transition-colors"
+                        >
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              {getRankIcon(user.rank)}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="border border-white/20">
+                                <AvatarFallback className="bg-white/10 text-white">
+                                  {user.full_name ? user.full_name.split(' ').map(n => n[0]).join('') : user.username?.[0] || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium text-white">{user.full_name || user.username || 'Anonymous'}</span>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <Badge variant="outline" className={getBadgeColor(user.total_score)}>
+                              {getBadgeName(user.total_score)}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-right font-medium text-white">{user.solved_count}</td>
+                          <td className="p-4 text-right font-bold text-white">{user.total_score}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </Card>
-            ))}
-          </div>
-
-          {/* Full Leaderboard */}
-          <Card className="bg-black/60 backdrop-blur-xl border-white/10" style={{
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-          }}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-left p-4 font-semibold text-white">Rank</th>
-                    <th className="text-left p-4 font-semibold text-white">User</th>
-                    <th className="text-left p-4 font-semibold text-white">Badge</th>
-                    <th className="text-right p-4 font-semibold text-white">Solved</th>
-                    <th className="text-right p-4 font-semibold text-white">Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboardData.map((user) => (
-                    <tr 
-                      key={user.rank} 
-                      className="border-b border-white/10 last:border-0 hover:bg-white/5 transition-colors"
-                    >
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          {getRankIcon(user.rank)}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="border border-white/20">
-                            <AvatarFallback className="bg-white/10 text-white">
-                              {user.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium text-white">{user.name}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <Badge variant="outline" className={getBadgeColor(user.badge)}>
-                          {user.badge}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-right font-medium text-white">{user.solved}</td>
-                      <td className="p-4 text-right font-bold text-white">{user.score}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+            </>
+          )}
         </div>
       </div>
     </div>
