@@ -151,6 +151,13 @@ export type Database = {
             referencedRelation: "problems"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "submissions_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       test_cases: {
@@ -192,6 +199,13 @@ export type Database = {
             referencedRelation: "problems"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "test_cases_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       topics: {
@@ -229,7 +243,65 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      problems_public: {
+        Row: {
+          acceptance_rate: number | null
+          constraints: string | null
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          expected_output: string | null
+          id: string | null
+          input_format: string | null
+          order_index: number | null
+          slug: string | null
+          starter_code: string | null
+          title: string | null
+          topic_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          acceptance_rate?: number | null
+          constraints?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          expected_output?: string | null
+          id?: string | null
+          input_format?: string | null
+          order_index?: number | null
+          slug?: string | null
+          starter_code?: string | null
+          title?: string | null
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          acceptance_rate?: number | null
+          constraints?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          expected_output?: string | null
+          id?: string | null
+          input_format?: string | null
+          order_index?: number | null
+          slug?: string | null
+          starter_code?: string | null
+          title?: string | null
+          topic_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problems_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_leaderboard: {
