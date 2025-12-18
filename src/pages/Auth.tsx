@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { AnimatedBackground } from "@/components/3d/AnimatedBackground";
 import { motion } from "framer-motion";
+import { PlusGrid } from "@/components/ui/plus-grid";
 
 const signupSchema = z.object({
   fullName: z.string().trim().min(1, "Name is required").max(100),
@@ -25,6 +26,7 @@ const signinSchema = z.object({
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -151,24 +153,31 @@ const Auth = () => {
       <AnimatedBackground />
 
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 opacity-5 z-0" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-      }} />
+      {/* Grid pattern overlay */}
+      <PlusGrid spacing={40} radius={140} color="#bc13fe" />
 
       <motion.div
         className="w-full max-w-md relative z-10"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
       >
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
             <motion.div
-              className="p-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/30 group-hover:border-white/50"
+              className={`p-2 rounded-lg bg-black/40 backdrop-blur-sm border transition-colors duration-300 ${activeTab === "signin"
+                ? "border-neon-cyan/50 group-hover:border-neon-cyan"
+                : "border-neon-pink/50 group-hover:border-neon-pink"
+                }`}
               whileHover={{ scale: 1.1, rotate: 3 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              style={{
+                boxShadow: activeTab === "signin"
+                  ? "0 0 15px rgba(0,243,255,0.2)"
+                  : "0 0 15px rgba(255,0,68,0.2)"
+              }}
             >
-              <Code2 className="h-8 w-8 text-white" />
+              <Code2 className={`h-8 w-8 transition-colors duration-300 ${activeTab === "signin" ? "text-neon-cyan" : "text-neon-pink"
+                }`} />
             </motion.div>
             <span className="text-2xl font-bold text-white">
               ML Playground
@@ -180,22 +189,25 @@ const Auth = () => {
         </div>
 
         <DepthCard
-          className="p-6 !bg-black/10 backdrop-blur-sm border-white/20"
+          className={`p-6 !bg-black/10 backdrop-blur-sm shadow-xl transition-all duration-300 ${activeTab === "signin"
+            ? "border-neon-cyan/30 shadow-[0_0_30px_rgba(0,243,255,0.1)]"
+            : "border-neon-pink/30 shadow-[0_0_30px_rgba(255,0,68,0.1)]"
+            }`}
           depth="lg"
           hoverLift={true}
           tiltEffect={true}
         >
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/30 border border-border/50">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-black/40 border border-white/10">
               <TabsTrigger
                 value="signin"
-                className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300"
+                className="data-[state=active]:bg-neon-cyan data-[state=active]:text-black data-[state=active]:font-bold data-[state=active]:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all duration-300"
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger
                 value="signup"
-                className="data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-lg transition-all duration-300"
+                className="data-[state=active]:bg-neon-pink data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-[0_0_20px_rgba(255,0,68,0.4)] transition-all duration-300"
               >
                 Sign Up
               </TabsTrigger>
@@ -211,7 +223,7 @@ const Auth = () => {
                     type="email"
                     placeholder="your@email.com"
                     required
-                    className="bg-white/5 border-border/50 focus:border-white transition-all duration-300"
+                    className="bg-black/40 border-white/10 focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
@@ -222,13 +234,13 @@ const Auth = () => {
                     type="password"
                     placeholder="••••••••"
                     required
-                    className="bg-white/5 border-border/50 focus:border-white transition-all duration-300"
+                    className="bg-black/40 border-white/10 focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all duration-300"
                   />
                 </div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     type="submit"
-                    className="w-full bg-white text-black hover:bg-white/90 font-semibold shadow-lg shadow-white/30 hover:shadow-white/50 transition-all duration-300"
+                    className="w-full bg-neon-cyan text-black hover:bg-neon-cyan/90 font-bold shadow-[0_0_20px_rgba(0,243,255,0.3)] hover:shadow-[0_0_30px_rgba(0,243,255,0.5)] transition-all duration-300"
                     disabled={isLoading}
                   >
                     {isLoading ? "Signing in..." : "Sign In"}
@@ -247,7 +259,7 @@ const Auth = () => {
                     type="text"
                     placeholder="John Doe"
                     required
-                    className="bg-white/5 border-border/50 focus:border-white transition-all duration-300"
+                    className="bg-black/40 border-white/10 focus:border-neon-pink focus:ring-1 focus:ring-neon-pink transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
@@ -258,7 +270,7 @@ const Auth = () => {
                     type="email"
                     placeholder="your@email.com"
                     required
-                    className="bg-white/5 border-border/50 focus:border-white transition-all duration-300"
+                    className="bg-black/40 border-white/10 focus:border-neon-pink focus:ring-1 focus:ring-neon-pink transition-all duration-300"
                   />
                 </div>
                 <div className="space-y-2">
@@ -270,13 +282,13 @@ const Auth = () => {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="bg-white/5 border-border/50 focus:border-white transition-all duration-300"
+                    className="bg-black/40 border-white/10 focus:border-neon-pink focus:ring-1 focus:ring-neon-pink transition-all duration-300"
                   />
                 </div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     type="submit"
-                    className="w-full bg-white text-black hover:bg-white/90 font-semibold shadow-lg shadow-white/30 hover:shadow-white/50 transition-all duration-300"
+                    className="w-full bg-neon-pink text-white hover:bg-neon-pink/90 font-bold shadow-[0_0_20px_rgba(255,0,68,0.3)] hover:shadow-[0_0_30px_rgba(255,0,68,0.5)] transition-all duration-300 border border-neon-pink"
                     disabled={isLoading}
                   >
                     {isLoading ? "Creating account..." : "Create Account"}
