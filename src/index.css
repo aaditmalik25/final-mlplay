@@ -29,6 +29,11 @@ All colors MUST be HSL.
     --accent: 0 0% 100%;
     --accent-foreground: 0 0% 0%;
 
+    /* Neon Colors */
+    --neon-cyan: 184 100% 50%;
+    --neon-purple: 283 98% 54%;
+    --neon-pink: 328 100% 54%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
@@ -37,23 +42,23 @@ All colors MUST be HSL.
     --ring: 0 0% 100%;
 
     --radius: 0.75rem;
-    
+
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 25 95% 53%;
     --warning-foreground: 0 0% 100%;
-    
+
     --easy: 142 76% 36%;
     --medium: 25 95% 53%;
     --hard: 0 84% 60%;
-    
+
     --gradient-primary: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 90%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 100% / 0.1) 0%, hsl(0 0% 100% / 0.05) 100%);
-    
+
     --shadow-lg: 0 20px 40px -12px hsl(0 0% 0% / 0.5);
     --shadow-primary: 0 10px 30px -10px hsl(0 0% 100% / 0.3);
-    
+
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 5%;
@@ -101,7 +106,7 @@ All colors MUST be HSL.
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 0 0% 100%;
-    
+
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 100% / 0.1) 0%, hsl(0 0% 100% / 0.05) 100%);
     --sidebar-background: 0 0% 5%;
     --sidebar-foreground: 0 0% 100%;

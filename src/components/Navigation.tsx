@@ -29,51 +29,51 @@ const Navigation = () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
-  
+
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
-      <Link 
-        to="/topics" 
+      <Link
+        to="/topics"
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-md transition-colors",
-          isActive("/topics") 
-            ? "bg-primary text-primary-foreground" 
+          isActive("/topics")
+            ? "bg-primary text-primary-foreground"
             : "text-foreground hover:bg-secondary"
         )}
       >
         <Code2 className="h-4 w-4" />
         Topics
       </Link>
-      <Link 
-        to="/problems" 
+      <Link
+        to="/problems"
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-md transition-colors",
-          isActive("/problems") 
-            ? "bg-primary text-primary-foreground" 
+          isActive("/problems")
+            ? "bg-primary text-primary-foreground"
             : "text-foreground hover:bg-secondary"
         )}
       >
         <Code2 className="h-4 w-4" />
         Problems
       </Link>
-      <Link 
+      <Link
         to="/leaderboard"
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-md transition-colors",
-          isActive("/leaderboard") 
-            ? "bg-primary text-primary-foreground" 
+          isActive("/leaderboard")
+            ? "bg-primary text-primary-foreground"
             : "text-foreground hover:bg-secondary"
         )}
       >
         <Trophy className="h-4 w-4" />
         Leaderboard
       </Link>
-      <Link 
+      <Link
         to="/dashboard"
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-md transition-colors",
-          isActive("/dashboard") 
-            ? "bg-primary text-primary-foreground" 
+          isActive("/dashboard")
+            ? "bg-primary text-primary-foreground"
             : "text-foreground hover:bg-secondary"
         )}
       >
@@ -84,7 +84,8 @@ const Navigation = () => {
   );
 
   return (
-    <nav className="border-b border-border bg-card sticky top-0 z-50 backdrop-blur-sm bg-card/80">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/50 backdrop-blur-md supports-[backdrop-filter]:bg-black/20">
+      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-neon-cyan/50 to-transparent opacity-50" />
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl">
@@ -93,7 +94,7 @@ const Navigation = () => {
               ML Playground
             </span>
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-2">
             <NavLinks />
