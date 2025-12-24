@@ -107,7 +107,8 @@ const Navigation = () => {
             {isLoggedIn ? (
               <>
                 {/* XP Display */}
-                <div className="flex items-center gap-2 mr-3 px-3 py-1 rounded-full bg-zinc-900/80 border border-yellow-500/30 backdrop-blur-xl shadow-[0_0_15px_rgba(234,179,8,0.15)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:border-yellow-500/60 transition-all duration-300 group cursor-default">
+                {/* XP Display */}
+                <div className="flex items-center gap-1.5 mr-2 px-2.5 py-1 rounded-full bg-zinc-900/80 border border-yellow-500/30 backdrop-blur-xl shadow-[0_0_15px_rgba(234,179,8,0.15)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:border-yellow-500/60 transition-all duration-300 group cursor-default">
                   <LightningZap />
                   <span className="font-bold text-sm bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 bg-clip-text text-transparent font-mono tracking-wider drop-shadow-sm">
                     {xp} XP

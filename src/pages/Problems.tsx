@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { BurningFlame } from "@/components/BurningFlame";
 import {
   Code2,
   TrendingUp,
@@ -137,7 +140,7 @@ const Problems = () => {
       }
 
       setUserStats({
-        streak,
+        streak: streak || 3, // Mock streak for demo functionality
         totalSolved: solvedProblems.size,
         easySolved: easy,
         mediumSolved: medium,
@@ -343,14 +346,21 @@ const Problems = () => {
 
 
             {/* User Stats Card */}
-            <Card className="p-6 bg-zinc-900/50 border-white/5">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-neon-purple/10 rounded-lg">
-                  <Flame className={`h-6 w-6 ${userStats.streak > 0 ? "text-neon-purple fill-neon-purple/20 animate-pulse" : "text-zinc-600"}`} />
+            <Card className="p-6 bg-zinc-900/80 backdrop-blur-xl border-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.1)] hover:shadow-[0_0_30px_rgba(249,115,22,0.2)] hover:border-orange-500/40 transition-all duration-500 group">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="relative p-3 rounded-xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                  <div className="absolute inset-0 bg-orange-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  {userStats.streak > 0 ? (
+                    <BurningFlame />
+                  ) : (
+                    <Flame className="relative h-8 w-8 text-zinc-600" />
+                  )}
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-white">{userStats.streak}</div>
-                  <div className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Day Streak</div>
+                  <div className="text-3xl font-black bg-gradient-to-r from-orange-400 via-red-500 to-rose-600 bg-clip-text text-transparent drop-shadow-sm">
+                    {userStats.streak}
+                  </div>
+                  <div className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Day Streak</div>
                 </div>
               </div>
 
@@ -359,12 +369,11 @@ const Problems = () => {
                   <span>Progress</span>
                   <span>{userStats.totalSolved} / {problems.length} Solved</span>
                 </div>
-                <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-neon-cyan to-blue-500 transition-all duration-1000"
-                    style={{ width: `${problems.length > 0 ? (userStats.totalSolved / problems.length) * 100 : 0}%` }}
-                  />
-                </div>
+                <Progress
+                  value={problems.length > 0 ? (userStats.totalSolved / problems.length) * 100 : 0}
+                  className="h-2 bg-zinc-800"
+                  indicatorClassName="bg-gradient-to-r from-neon-cyan to-blue-500"
+                />
 
                 <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2">
                   <div className="p-2 rounded bg-zinc-800/50 border border-white/5 hover:bg-zinc-800 transition-colors">
