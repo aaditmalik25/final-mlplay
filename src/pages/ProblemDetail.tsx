@@ -87,22 +87,32 @@ const ProblemDetail = () => {
       });
 
       if (statementError) {
-        // Handle Premium/Auth errors
-        if (statementError instanceof Error && statementError.message.includes('Premium')) { // Simplify error check
+        console.error("Statement fetch error:", statementError);
+
+        // Parse error body if possible, or check message
+        // Supabase functions error might have 'context' or be an object
+        const isPremiumError =
+          statementError.code === 'premium_required' ||
+          (statementError.context && (await statementError.context.json()).code === 'premium_required') ||
+          statementError.message?.includes('Premium') ||
+          JSON.stringify(statementError).includes('premium_required');
+
+        if (isPremiumError) {
           toast({
             title: "Premium Content",
             description: "This problem is for Premium users only.",
-            variant: "destructive"
+            variant: "default", // or custom style
+            className: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
           });
           setProblem(prev => prev ? ({
             ...prev,
             description: "This is a Premium problem. Upgrade to view.",
             isLocked: true
           } as any) : null);
-        } else {
-          throw statementError;
+          return;
         }
-        return;
+
+        throw statementError;
       }
 
       // Merge protected data

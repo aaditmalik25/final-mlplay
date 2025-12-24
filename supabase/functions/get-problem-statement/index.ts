@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
         const { data: problem, error: problemError } = await supabaseClient
             .from('problems')
-            .select('id, difficulty')
+            .select('id, is_premium')
             .eq('slug', slug)
             .single();
 
@@ -74,9 +74,8 @@ Deno.serve(async (req) => {
             })
         }
 
-        // Only block if problem is NOT Easy AND user is NOT Premium
-        // (Easy problems are free for everyone)
-        const isProblemPremium = problem.difficulty !== 'easy';
+        // Only block if problem is explicitly marked Premium AND user is NOT Premium
+        const isProblemPremium = problem.is_premium;
 
         if (isProblemPremium && !isPremium) {
             return new Response(JSON.stringify({ error: 'Premium subscription required to view this problem', code: 'premium_required' }), {

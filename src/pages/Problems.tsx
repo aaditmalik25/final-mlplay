@@ -23,11 +23,16 @@ type Difficulty = "easy" | "medium" | "hard";
 
 interface Problem {
   id: string;
+  order_index: number;
   title: string;
   slug: string;
   difficulty: Difficulty;
   acceptance_rate: number;
   status?: "solved" | "unsolved";
+  is_premium?: boolean;
+  topics?: {
+    name: string;
+  };
 }
 
 const TOPICS = [
@@ -60,7 +65,7 @@ const Problems = () => {
     try {
       const { data, error } = await supabase
         .from('problems')
-        .select('id, title, slug, difficulty, acceptance_rate')
+        .select('id, order_index, title, slug, difficulty, acceptance_rate, is_premium, topics(name)')
         .order('order_index');
 
       if (error) throw error;
@@ -119,8 +124,8 @@ const Problems = () => {
                       key={topic}
                       onClick={() => setSelectedTopic(topic)}
                       className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${selectedTopic === topic
-                          ? "bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-                          : "bg-zinc-900/50 text-zinc-400 border-white/10 hover:border-white/30 hover:text-white"
+                        ? "bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+                        : "bg-zinc-900/50 text-zinc-400 border-white/10 hover:border-white/30 hover:text-white"
                         }`}
                     >
                       {topic}
@@ -133,8 +138,6 @@ const Problems = () => {
                   className="hidden md:flex items-center gap-1 text-sm text-neon-cyan hover:text-neon-cyan/80 transition-colors font-medium ml-4"
                 >
                   View all topics
-                  <TrendingUp className="h-3 w-3" /> {/* Using TrendingUp as arrow proxy or similar if ArrowRight not imported, checking imports... ArrowRight is not imported. Using Filter? No. Let's use standard chevron > style or simple text */}
-                  {/* Better: I will use a simple CSS arrow or reuse an existing icon. I see TrendingUp, Code2, etc. I'll just use text "->" */}
                   <span className="text-lg leading-none">›</span>
                 </Link>
               </div>
@@ -205,9 +208,11 @@ const Problems = () => {
               {/* Table Header */}
               <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-white/5 text-sm font-medium text-zinc-400">
                 <div className="col-span-1 text-center">Status</div>
-                <div className="col-span-6">Title</div>
-                <div className="col-span-3">Difficulty</div>
-                <div className="col-span-2 text-right">Acceptance</div>
+                <div className="col-span-1 text-center">#</div>
+                <div className="col-span-5">Title</div>
+                <div className="col-span-2">Topic</div>
+                <div className="col-span-2">Difficulty</div>
+                <div className="col-span-1 text-right">Acc.</div>
               </div>
 
               {/* Table Body */}
@@ -231,25 +236,35 @@ const Problems = () => {
                         )}
                       </div>
 
+                      {/* ID */}
+                      <div className="col-span-1 text-center text-zinc-500 font-mono text-sm">
+                        {problem.order_index}
+                      </div>
+
                       {/* Title */}
-                      <div className="col-span-6">
+                      <div className="col-span-5">
                         <Link
                           to={`/problem/${problem.slug}`}
                           className="font-medium text-zinc-300 group-hover:text-white transition-colors flex items-center gap-2"
                         >
                           {problem.title}
-                          {/* Mock Tag for visual interest */}
-                          {i === 0 && <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 border-none">New</Badge>}
+                          {/* Premium Tag */}
+                          {problem.is_premium && <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-yellow-500/10 text-yellow-500 border-yellow-500/20">Premium</Badge>}
                         </Link>
                       </div>
 
+                      {/* Topic */}
+                      <div className="col-span-2 text-sm text-zinc-400">
+                        {problem.topics?.name || "General"}
+                      </div>
+
                       {/* Difficulty */}
-                      <div className={`col-span-3 text-sm font-medium ${getDifficultyColor(problem.difficulty)}`}>
+                      <div className={`col-span-2 text-sm font-medium ${getDifficultyColor(problem.difficulty)}`}>
                         {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
                       </div>
 
                       {/* Acceptance */}
-                      <div className="col-span-2 text-right text-sm text-zinc-500 group-hover:text-zinc-400">
+                      <div className="col-span-1 text-right text-sm text-zinc-500 group-hover:text-zinc-400">
                         {problem.acceptance_rate || 0}%
                       </div>
                     </div>
