@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Send, ArrowLeft, Loader2 } from "lucide-react";
+import { Play, Send, ArrowLeft, Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Problem {
@@ -20,6 +20,7 @@ interface Problem {
   input_format: string;
   expected_output: string;
   starter_code: string;
+  isLocked?: boolean;
 }
 
 interface TestResult {
@@ -47,15 +48,67 @@ const ProblemDetail = () => {
 
   const fetchProblem = async () => {
     try {
-      const { data, error } = await supabase
+      // 1. Fetch Public Metadata (Safe, open to everyone)
+      const { data: publicData, error: publicError } = await supabase
         .from('problems')
-        .select('*')
+        .select('id, title, slug, difficulty, acceptance_rate') // Explicitly select only public fields
         .eq('slug', slug)
         .single();
 
-      if (error) throw error;
-      setProblem(data as Problem);
-      setCode(data.starter_code || "");
+      if (publicError) throw publicError;
+
+      // Initialize with public data
+      const partialProblem = {
+        ...publicData,
+        description: "Loading statement...", // Placeholder
+        constraints: "",
+        input_format: "",
+        expected_output: "",
+        starter_code: ""
+      } as Problem;
+
+      setProblem(partialProblem);
+
+      // 2. Fetch Protected Content (Gated via Edge Function)
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (!sessionData.session) {
+        // User not logged in - show lock state
+        setProblem(prev => prev ? ({
+          ...prev,
+          description: "Please log in to view the problem statement.",
+          isLocked: true
+        } as any) : null);
+        return;
+      }
+
+      const { data: statementData, error: statementError } = await supabase.functions.invoke('get-problem-statement', {
+        body: { slug: slug }
+      });
+
+      if (statementError) {
+        // Handle Premium/Auth errors
+        if (statementError instanceof Error && statementError.message.includes('Premium')) { // Simplify error check
+          toast({
+            title: "Premium Content",
+            description: "This problem is for Premium users only.",
+            variant: "destructive"
+          });
+          setProblem(prev => prev ? ({
+            ...prev,
+            description: "This is a Premium problem. Upgrade to view.",
+            isLocked: true
+          } as any) : null);
+        } else {
+          throw statementError;
+        }
+        return;
+      }
+
+      // Merge protected data
+      setProblem(prev => prev ? ({ ...prev, ...statementData }) : null);
+      setCode(statementData.starter_code || "");
+
     } catch (error) {
       console.error('Error fetching problem:', error);
       toast({
@@ -70,13 +123,13 @@ const ProblemDetail = () => {
 
   const handleRun = async () => {
     if (!problem) return;
-    
+
     setRunning(true);
     setTestResults([]);
-    
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         toast({
           title: "Authentication required",
@@ -93,7 +146,7 @@ const ProblemDetail = () => {
       if (error) throw error;
 
       setTestResults(data.results || []);
-      
+
       if (data.status === 'accepted') {
         toast({
           title: "All tests passed! 🎉",
@@ -155,7 +208,7 @@ const ProblemDetail = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <Navigation />
-      
+
       {/* Animated 3D background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse" />
@@ -167,7 +220,7 @@ const ProblemDetail = () => {
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
       }} />
-      
+
       <div className="container mx-auto px-4 py-6 relative z-10">
         <Button asChild variant="ghost" className="mb-4">
           <Link to="/topics">
@@ -182,7 +235,10 @@ const ProblemDetail = () => {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
           }}>
             <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-3 text-white">{problem.title}</h1>
+              <h1 className="text-2xl font-bold mb-3 text-white flex items-center gap-2">
+                {problem.title}
+                {problem.isLocked && <Lock className="h-5 w-5 text-zinc-500" />}
+              </h1>
               <div className="flex gap-2 mb-4">
                 <Badge variant="outline" className="bg-white/10 border-white/20 text-white">
                   {problem.difficulty}
@@ -195,14 +251,31 @@ const ProblemDetail = () => {
                 <TabsTrigger value="description" className="flex-1 data-[state=active]:bg-white data-[state=active]:text-black">Description</TabsTrigger>
                 <TabsTrigger value="results" className="flex-1 data-[state=active]:bg-white data-[state=active]:text-black">Test Results</TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="description" className="space-y-4 mt-4">
-                <div>
-                  <h3 className="font-semibold mb-2 text-white">Problem Statement</h3>
-                  <p className="text-white/70 whitespace-pre-wrap">
-                    {problem.description}
-                  </p>
-                </div>
+
+              <TabsContent value="description" className="space-y-4 mt-4 relative">
+                {problem.isLocked ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 border border-white/10 rounded-lg bg-white/5">
+                    <div className="p-4 bg-zinc-900 rounded-full">
+                      <Lock className="h-8 w-8 text-zinc-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-white">Problem Locked</h3>
+                      <p className="text-zinc-400 max-w-sm">
+                        {problem.description}
+                      </p>
+                    </div>
+                    <Button className="bg-neon-cyan text-black hover:bg-neon-cyan/90">
+                      Unlock Premium
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <h3 className="font-semibold mb-2 text-white">Problem Statement</h3>
+                    <p className="text-white/70 whitespace-pre-wrap">
+                      {problem.description}
+                    </p>
+                  </div>
+                )}
 
                 {problem.constraints && (
                   <div>
@@ -231,7 +304,7 @@ const ProblemDetail = () => {
                   </div>
                 )}
               </TabsContent>
-              
+
               <TabsContent value="results" className="space-y-4 mt-4">
                 {testResults.length === 0 ? (
                   <p className="text-white/70">
@@ -285,9 +358,14 @@ const ProblemDetail = () => {
           </Card>
 
           {/* Right Panel - Code Editor */}
-          <Card className="p-6 flex flex-col bg-black/60 backdrop-blur-xl border-white/10" style={{
+          <Card className="p-6 flex flex-col bg-black/60 backdrop-blur-xl border-white/10 relative" style={{
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
           }}>
+            {problem.isLocked && (
+              <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                <p className="text-zinc-400 font-mono">Editor Locked</p>
+              </div>
+            )}
             <div className="mb-4">
               <h3 className="font-semibold text-lg text-white">Code Editor</h3>
               <p className="text-sm text-white/60">Python 3.9</p>
@@ -301,9 +379,9 @@ const ProblemDetail = () => {
             />
 
             <div className="flex gap-2">
-              <Button 
-                onClick={handleRun} 
-                variant="outline" 
+              <Button
+                onClick={handleRun}
+                variant="outline"
                 className="flex-1 border-white/20 text-white hover:bg-white/10"
                 disabled={running}
               >
@@ -319,8 +397,8 @@ const ProblemDetail = () => {
                   </>
                 )}
               </Button>
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 className="flex-1 bg-white text-black hover:bg-white/90"
                 disabled={running}
               >
