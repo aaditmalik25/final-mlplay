@@ -57,9 +57,97 @@ const Problems = () => {
     count: Math.random() > 0.7 ? Math.floor(Math.random() * 5) : 0
   }));
 
+  const [userStats, setUserStats] = useState({
+    streak: 0,
+    totalSolved: 0,
+    easySolved: 0,
+    mediumSolved: 0,
+    hardSolved: 0
+  });
+
   useEffect(() => {
     fetchProblems();
+    fetchUserStats();
   }, []);
+
+  const fetchUserStats = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('submissions')
+        .select('created_at, problem:problems(id, difficulty)')
+        .eq('user_id', session.user.id)
+        .eq('status', 'accepted');
+
+      if (error) throw error;
+
+      if (!data) return;
+
+      // 1. Calculate Solved Counts (Unique Problems)
+      const solvedProblems = new Set();
+      let easy = 0, medium = 0, hard = 0;
+
+      data.forEach(sub => {
+        // @ts-ignore
+        const problemId = sub.problem?.id;
+        // @ts-ignore
+        const difficulty = sub.problem?.difficulty;
+
+        if (problemId && !solvedProblems.has(problemId)) {
+          solvedProblems.add(problemId);
+          if (difficulty === 'easy') easy++;
+          else if (difficulty === 'medium') medium++;
+          else if (difficulty === 'hard') hard++;
+        }
+      });
+
+      // 2. Calculate Streak
+      // Get unique dates YYYY-MM-DD
+      const dates = [...new Set(data.map(sub => new Date(sub.created_at).toISOString().split('T')[0]))].sort().reverse();
+
+      let streak = 0;
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      // Streak logic: Needs to include today or yesterday to be "active"
+      if (dates.length > 0) {
+        let currentDateStr = dates[0];
+
+        // If the latest submission is not today or yesterday, streak is broken (0), 
+        // unless you want to show the specific streak record. 
+        // Usually "Current Streak" implies it must be maintained.
+        if (currentDateStr === today || currentDateStr === yesterday) {
+          streak = 1;
+          let checkDate = new Date(currentDateStr);
+
+          for (let i = 1; i < dates.length; i++) {
+            // Expected previous day
+            checkDate.setDate(checkDate.getDate() - 1);
+            const expectedDateStr = checkDate.toISOString().split('T')[0];
+
+            if (dates[i] === expectedDateStr) {
+              streak++;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      setUserStats({
+        streak,
+        totalSolved: solvedProblems.size,
+        easySolved: easy,
+        mediumSolved: medium,
+        hardSolved: hard
+      });
+
+    } catch (err) {
+      console.error("Error fetching stats:", err);
+    }
+  };
 
   const fetchProblems = async () => {
     try {
@@ -175,30 +263,6 @@ const Problems = () => {
                     ))}
                   </div>
 
-                  {/* Solved Progress */}
-                  <div className="flex items-center gap-3 pl-4 border-l border-white/10">
-                    <div className="text-right hidden sm:block">
-                      <div className="text-xs text-zinc-400">Solved</div>
-                      <div className="text-sm font-bold text-white leading-none">
-                        {problems.filter(p => p.status === 'solved').length} / {problems.length}
-                      </div>
-                    </div>
-                    <div className="relative w-10 h-10 flex items-center justify-center">
-                      <svg className="w-full h-full -rotate-90">
-                        <circle cx="20" cy="20" r="16" className="stroke-zinc-800" strokeWidth="4" fill="none" />
-                        <circle
-                          cx="20" cy="20" r="16"
-                          className="stroke-neon-cyan transition-all duration-1000 ease-out"
-                          strokeWidth="4"
-                          fill="none"
-                          strokeDasharray="100"
-                          strokeDashoffset={100 - ((problems.filter(p => p.status === 'solved').length / (problems.length || 1)) * 100)}
-                        />
-                      </svg>
-                      <Trophy className="absolute h-4 w-4 text-zinc-500" />
-                    </div>
-                  </div>
-
                 </div>
               </div>
             </div>
@@ -277,35 +341,43 @@ const Problems = () => {
           {/* RIGHT COLUMN: Sidebar (3 cols - Compressed) */}
           <div className="xl:col-span-3 flex flex-col gap-6">
 
+
             {/* User Stats Card */}
             <Card className="p-6 bg-zinc-900/50 border-white/5">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-neon-purple/10 rounded-lg">
-                  <Flame className="h-6 w-6 text-neon-purple" />
+                  <Flame className={`h-6 w-6 ${userStats.streak > 0 ? "text-neon-purple fill-neon-purple/20 animate-pulse" : "text-zinc-600"}`} />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-white">0</div>
+                  <div className="text-2xl font-bold text-white">{userStats.streak}</div>
                   <div className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Day Streak</div>
                 </div>
               </div>
 
               <div className="space-y-4">
+                <div className="flex justify-between text-xs text-zinc-400 mb-1">
+                  <span>Progress</span>
+                  <span>{userStats.totalSolved} / {problems.length} Solved</span>
+                </div>
                 <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                  <div className="h-full w-[0%] bg-neon-cyan" />
+                  <div
+                    className="h-full bg-gradient-to-r from-neon-cyan to-blue-500 transition-all duration-1000"
+                    style={{ width: `${problems.length > 0 ? (userStats.totalSolved / problems.length) * 100 : 0}%` }}
+                  />
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center text-xs pt-2">
-                  <div className="p-2 rounded bg-zinc-800/50 border border-white/5">
-                    <div className="text-zinc-500 mb-1">Easy</div>
-                    <div className="text-white font-bold">0</div>
+                  <div className="p-2 rounded bg-zinc-800/50 border border-white/5 hover:bg-zinc-800 transition-colors">
+                    <div className="text-green-400 mb-1 font-medium">Easy</div>
+                    <div className="text-white font-bold text-lg">{userStats.easySolved}</div>
                   </div>
-                  <div className="p-2 rounded bg-zinc-800/50 border border-white/5">
-                    <div className="text-zinc-500 mb-1">Med</div>
-                    <div className="text-white font-bold">0</div>
+                  <div className="p-2 rounded bg-zinc-800/50 border border-white/5 hover:bg-zinc-800 transition-colors">
+                    <div className="text-yellow-400 mb-1 font-medium">Med</div>
+                    <div className="text-white font-bold text-lg">{userStats.mediumSolved}</div>
                   </div>
-                  <div className="p-2 rounded bg-zinc-800/50 border border-white/5">
-                    <div className="text-zinc-500 mb-1">Hard</div>
-                    <div className="text-white font-bold">0</div>
+                  <div className="p-2 rounded bg-zinc-800/50 border border-white/5 hover:bg-zinc-800 transition-colors">
+                    <div className="text-red-400 mb-1 font-medium">Hard</div>
+                    <div className="text-white font-bold text-lg">{userStats.hardSolved}</div>
                   </div>
                 </div>
               </div>

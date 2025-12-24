@@ -5,11 +5,14 @@ import { Code2, Trophy, User, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserXP } from "@/hooks/useUserXP";
+import { LightningZap } from "@/components/LightningZap";
 
 const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { xp } = useUserXP(); // Use the hook
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -103,6 +106,14 @@ const Navigation = () => {
           <div className="hidden md:flex items-center gap-2">
             {isLoggedIn ? (
               <>
+                {/* XP Display */}
+                <div className="flex items-center gap-2 mr-3 px-3 py-1 rounded-full bg-zinc-900/80 border border-yellow-500/30 backdrop-blur-xl shadow-[0_0_15px_rgba(234,179,8,0.15)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:border-yellow-500/60 transition-all duration-300 group cursor-default">
+                  <LightningZap />
+                  <span className="font-bold text-sm bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 bg-clip-text text-transparent font-mono tracking-wider drop-shadow-sm">
+                    {xp} XP
+                  </span>
+                </div>
+
                 <Button asChild variant="ghost">
                   <Link to="/problems">Go to Problems</Link>
                 </Button>

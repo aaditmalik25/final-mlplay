@@ -11,9 +11,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -22,6 +24,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -37,6 +40,51 @@
   padding: 2em;
 }
 
+
 .read-the-docs {
   color: #888;
+}
+
+@keyframes zap-jitter {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3));
+  }
+
+  5% {
+    transform: scale(1.15) rotate(-5deg);
+    filter: drop-shadow(0 0 15px rgba(250, 204, 21, 1));
+  }
+
+  10% {
+    transform: scale(1.1) rotate(5deg);
+    filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.8));
+  }
+
+  15% {
+    transform: scale(1.15) rotate(-3deg);
+    filter: drop-shadow(0 0 20px rgba(250, 204, 21, 1));
+  }
+
+  20% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3));
+  }
+
+  40% {
+    transform: scale(1.05) rotate(2deg);
+    filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6));
+  }
+
+  50% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.3));
+  }
+}
+
+.animate-zap {
+  animation: zap-jitter 3s infinite cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  will-change: transform, filter;
 }

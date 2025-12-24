@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Leaderboard from "./pages/Leaderboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import "./App.css";
 
 const queryClient = new QueryClient();
 
